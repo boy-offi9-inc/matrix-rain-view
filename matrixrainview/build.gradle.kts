@@ -38,7 +38,7 @@ afterEvaluate {
     publishing {
         publications {
             release(MavenPublication) {
-                from components.release
+                from(components.release)
                 
                 groupId = "com.github.boy-offi9-inc"
                 artifactId = "matrix-rain-view"
