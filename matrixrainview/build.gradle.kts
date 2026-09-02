@@ -1,6 +1,7 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
+    id("maven-publish")
 }
 
 android {
@@ -31,4 +32,18 @@ android {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                
+                groupId = "com.github.boy-offi9-inc"
+                artifactId = "matrix-rain-view"
+                version = "1.0.0"
+            }
+        }
+    }
 }
