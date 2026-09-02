@@ -44,7 +44,7 @@ dependencies {
 afterEvaluate {
     publishing {
         publications {
-            release(MavenPublication) {
+            create<MavenPublication>("release") {
                 from(components.release)
                 
                 groupId = "com.github.boy-offi9-inc"
