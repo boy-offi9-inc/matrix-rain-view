@@ -10,8 +10,15 @@ android {
 
     defaultConfig {
         minSdk = 21
-        targetSdk = 34
         consumerProguardFiles("consumer-rules.pro")
+    }
+
+    testOptions {
+        targetSdk = 34
+    }
+
+    lint {
+        targetSdk = 34
     }
 
     buildTypes {
