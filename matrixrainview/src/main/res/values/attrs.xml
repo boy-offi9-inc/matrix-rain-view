@@ -1,0 +1,25 @@
+<resources>
+    <declare-styleable name="MatrixRainView">
+        <!-- Glyph color, e.g. the classic #00FF41 -->
+        <attr name="rainColor" format="color" />
+        <!-- Fall speed multiplier. 1.0 = default. -->
+        <attr name="rainSpeed" format="float" />
+        <!-- Column density multiplier. 1.0 = default, lower = sparser. -->
+        <attr name="rainDensity" format="float" />
+        <!-- Glyph size in px (usually set via sp in layout XML, which resolves to px). -->
+        <attr name="rainTextSize" format="dimension" />
+        <!-- Whether the head glyph of each column renders with a glow. -->
+        <attr name="rainGlow" format="boolean" />
+        <!-- Trail fade strength, 4-255. Lower = longer-lingering trails. -->
+        <attr name="rainFadeStrength" format="integer" />
+        <!-- Which glyph set to draw from. -->
+        <attr name="rainCharSet">
+            <enum name="katakana" value="0" />
+            <enum name="binary" value="1" />
+            <enum name="alnum" value="2" />
+            <enum name="custom" value="3" />
+        </attr>
+        <!-- Used only when rainCharSet="custom" -->
+        <attr name="rainCustomChars" format="string" />
+    </declare-styleable>
+</resources>
