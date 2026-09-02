@@ -33,7 +33,7 @@ jobs:
           # default branch by default, which needs GITHUB_TOKEN + a
           # contents: write permission neither of which are wired up here.
           # We don't need that feature, so just turn it off.
-          dependency-graph: disable
+          dependency-graph: disabled
 
       - name: Assemble library AAR
         run: gradle :matrixrainview:assembleRelease --stacktrace
