@@ -28,6 +28,12 @@ jobs:
       # wrapper, you can switch this back to `./gradlew ...`.
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          # setup-gradle submits a GitHub dependency graph on pushes to the
+          # default branch by default, which needs GITHUB_TOKEN + a
+          # contents: write permission neither of which are wired up here.
+          # We don't need that feature, so just turn it off.
+          dependency-graph: disable
 
       - name: Assemble library AAR
         run: gradle :matrixrainview:assembleRelease --stacktrace
