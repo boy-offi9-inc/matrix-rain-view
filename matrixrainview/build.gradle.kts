@@ -45,7 +45,7 @@ afterEvaluate {
     publishing {
         publications {
             create<MavenPublication>("release") {
-                from(components.release)
+                from(components["release"])
                 
                 groupId = "com.github.boy-offi9-inc"
                 artifactId = "matrix-rain-view"
