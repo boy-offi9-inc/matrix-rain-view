@@ -1,0 +1,41 @@
+name: Build Library AAR
+
+# Runs on every push/PR to main, plus manual trigger from the Actions tab.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-aar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # This repo doesn't commit a Gradle wrapper jar (binary file), so CI
+      # uses this action to provision Gradle itself instead of relying on
+      # ./gradlew. If you later run `gradle wrapper` locally and commit the
+      # wrapper, you can switch this back to `./gradlew ...`.
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Assemble library AAR
+        run: gradle :matrixrainview:assembleRelease --stacktrace
+
+      - name: Upload library AAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: matrixrainview-release-aar
+          path: matrixrainview/build/outputs/aar/*.aar
+          if-no-files-found: error
+          retention-days: 14
