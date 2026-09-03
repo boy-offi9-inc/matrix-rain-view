@@ -20,8 +20,7 @@ import kotlin.random.Random
  *
  * Note: a plain LinearLayout arranges children edge-to-edge and will NOT
  * let this view sit *behind* siblings — use FrameLayout (or ConstraintLayout)
- * for the "background effect" use case. See the sample app for a working
- * example.
+ * for the "background effect" use case.
  *
  * Handles its own animation lifecycle: starts on attach, stops on detach,
  * so it won't leak or burn battery when off-screen.
