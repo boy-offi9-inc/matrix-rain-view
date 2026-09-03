@@ -49,7 +49,7 @@ afterEvaluate {
                 
                 groupId = "com.github.boy-offi9-inc"
                 artifactId = "matrix-rain-view"
-                version = "1.0.0"
+                version = "1.0.1"
             }
         }
     }
