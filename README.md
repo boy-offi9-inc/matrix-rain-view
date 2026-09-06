@@ -17,7 +17,7 @@ speed up or slow down depending on device refresh rate.
 - [Install](#install)
 - [Usage](#usage)
 - [Attribute reference](#attribute-reference)
-- [How it works](#how-it-works))
+- [How it works](#how-it-works)
 
 ## Requirements
 
@@ -43,7 +43,7 @@ Add the dependency:
 
 ```kotlin
 dependencies {
-    implementation("com.github.boy-offi9-inc:matrix-rain-view:1.0.1")
+    implementation("com.github.boy-offi9-inc:matrix-rain-view:1.1.0")
 }
 ```
 
@@ -103,6 +103,26 @@ rain.pause()   // stop animating without detaching the view
 rain.resume()  // resume
 ```
 
+### Jetpack Compose
+
+```kotlin
+import com.boyoffi9.matrixrainview.compose.MatrixRain
+
+Box(Modifier.fillMaxSize()) {
+    MatrixRain(
+        modifier = Modifier.fillMaxSize(),
+        rainColor = Color(0xFF00FF41),
+        speed = 1.2f,
+        density = 1.0f,
+        glowEnabled = true,
+    )
+    // your real UI on top
+}
+```
+
+All parameters are reactive — changing them across recomposition updates the
+underlying view in place without restarting the animation.
+
 ## Attribute reference
 
 | Attribute           | Type      | Default    | Description                                                |
@@ -121,7 +141,11 @@ rain.resume()  // resume
 Each frame:
 1. A translucent black rectangle is drawn over the previous frame instead of
    clearing it — this produces the fading trail (the classic trick behind
-   every Matrix-rain implementation, web or native).
+   every Matrix-rain implementation, web or native). This is drawn onto an
+   offscreen `Bitmap`/`Canvas` the view owns and persists across frames,
+   then blitted to the real canvas — a plain `View`'s `onDraw` canvas isn't
+   guaranteed to retain its previous contents under hardware acceleration,
+   so the trail needs its own backing buffer to render reliably.
 2. Each column's head position advances by `delta_time * baseRate * speed * columnVariance`,
    so motion is smooth and consistent across devices/refresh rates.
 3. Glyphs occasionally mutate mid-column for the flicker look real Matrix

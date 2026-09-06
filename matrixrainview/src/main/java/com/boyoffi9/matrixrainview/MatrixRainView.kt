@@ -2,6 +2,7 @@ package com.boyoffi9.matrixrainview
 
 import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -112,11 +113,15 @@ class MatrixRainView @JvmOverloads constructor(
     private var animator: ValueAnimator? = null
     private var lastFrameTimeNanos = 0L
 
+    // Persistent offscreen buffer: the "draw translucent black over the old
+    // frame" trail trick needs a canvas whose contents survive between
+    // draws. A View's own onDraw canvas isn't guaranteed to persist across
+    // frames under hardware acceleration, so we own our own Bitmap/Canvas
+    // and just blit it in onDraw.
+    private var trailBitmap: Bitmap? = null
+    private var trailCanvas: Canvas? = null
+
     init {
-        // Shadow layers (used for the glow) require a software or hardware
-        // layer depending on API level; hardware layer is fine here since
-        // we don't use blur radii large enough to need software fallback.
-        setLayerType(LAYER_TYPE_HARDWARE, null)
         attrs?.let { readAttrs(context, it) }
         headPaint.textSize = textSizePx
         trailPaint.textSize = textSizePx
@@ -173,6 +178,12 @@ class MatrixRainView @JvmOverloads constructor(
     private fun recalculateColumns() {
         if (width == 0 || height == 0) return
 
+        if (trailBitmap?.width != width || trailBitmap?.height != height) {
+            trailBitmap?.recycle()
+            trailBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            trailCanvas = Canvas(trailBitmap!!)
+        }
+
         colWidth = textSizePx * 0.85f
         rowHeight = textSizePx * 1.1f
         val baseColumns = (width / colWidth).toInt().coerceAtLeast(1)
@@ -194,6 +205,9 @@ class MatrixRainView @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         stopAnimation()
+        trailBitmap?.recycle()
+        trailBitmap = null
+        trailCanvas = null
         super.onDetachedFromWindow()
     }
 
@@ -230,7 +244,8 @@ class MatrixRainView @JvmOverloads constructor(
                 columnY[c] += delta * 12f * speed * columnSpeed[c]
 
                 if (columnY[c] - columnLength[c] > rows) {
-                    columnY[c] = Random.nextInt(-rows / 2, 0).toFloat()
+                    val resetSpread = (rows / 2).coerceAtLeast(1)
+                    columnY[c] = Random.nextInt(-resetSpread, 0).toFloat()
                     columnSpeed[c] = 0.6f + Random.nextFloat() * 0.8f
                     columnLength[c] = Random.nextInt(8, 24)
                 }
@@ -250,11 +265,17 @@ class MatrixRainView @JvmOverloads constructor(
     // ---------------- Drawing ----------------
 
     override fun onDraw(canvas: Canvas) {
+        val buffer = trailCanvas ?: return
+        val bitmap = trailBitmap ?: return
+
         // Rather than clearing each frame, paint a translucent black rect over
-        // the previous frame. This is what produces the fading trail behind
-        // each column's head glyph — lower fadeStrength = slower fade = longer trails.
+        // the previous frame *on our own persistent bitmap*. This is what
+        // produces the fading trail behind each column's head glyph — lower
+        // fadeStrength = slower fade = longer trails. Drawing this into a
+        // bitmap we own (rather than the transient onDraw canvas) guarantees
+        // it survives frame to frame regardless of hardware acceleration.
         fadePaint.alpha = fadeStrength
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), fadePaint)
+        buffer.drawRect(0f, 0f, width.toFloat(), height.toFloat(), fadePaint)
 
         for (c in 0 until columnCount) {
             val headRow = columnY[c].toInt()
@@ -275,14 +296,16 @@ class MatrixRainView @JvmOverloads constructor(
                     } else {
                         headPaint.clearShadowLayer()
                     }
-                    canvas.drawText(glyph.toString(), x, y, headPaint)
+                    buffer.drawText(glyph.toString(), x, y, headPaint)
                 } else {
                     val fade = (1f - i.toFloat() / trailLen).coerceIn(0f, 1f)
                     trailPaint.color = rainColor
                     trailPaint.alpha = (fade * 200).toInt()
-                    canvas.drawText(glyph.toString(), x, y, trailPaint)
+                    buffer.drawText(glyph.toString(), x, y, trailPaint)
                 }
             }
         }
+
+        canvas.drawBitmap(bitmap, 0f, 0f, null)
     }
 }
