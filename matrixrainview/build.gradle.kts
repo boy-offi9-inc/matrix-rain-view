@@ -58,6 +58,7 @@ dependencies {
     implementation(composeBom)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.runtime:runtime")
+    implementation("androidx.compose.foundation:foundation")
 }
 
 afterEvaluate {
