@@ -1,6 +1,5 @@
 name: Build Library AAR
 
-# Runs on every push/PR to main, plus manual trigger from the Actions tab.
 on:
   push:
     branches: [ main ]
@@ -22,17 +21,10 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # This repo doesn't commit a Gradle wrapper jar (binary file), so CI
-      # uses this action to provision Gradle itself instead of relying on
-      # ./gradlew. If you later run `gradle wrapper` locally and commit the
-      # wrapper, you can switch this back to `./gradlew ...`.
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          # setup-gradle submits a GitHub dependency graph on pushes to the
-          # default branch by default, which needs GITHUB_TOKEN + a
-          # contents: write permission neither of which are wired up here.
-          # We don't need that feature, so just turn it off.
+          # Needs contents: write, which this workflow doesn't grant.
           dependency-graph: disabled
 
       - name: Assemble library AAR

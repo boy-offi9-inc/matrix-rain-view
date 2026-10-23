@@ -9,18 +9,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.boyoffi9.matrixrainview.MatrixRainView
 
 /**
- * Compose entry point for [MatrixRainView].
- *
- * ```kotlin
- * Box(Modifier.fillMaxSize()) {
- *     MatrixRain(modifier = Modifier.fillMaxSize())
- *     // your real UI on top
- * }
- * ```
- *
- * Recomposition updates the underlying [MatrixRainView]'s properties in
- * place — the view itself is only created once per composition, so the
- * animation isn't restarted on every parameter change.
+ * Compose wrapper for [MatrixRainView]. Parameters are applied to the same
+ * underlying view in place, so recomposition doesn't restart the animation.
  */
 @Composable
 fun MatrixRain(
