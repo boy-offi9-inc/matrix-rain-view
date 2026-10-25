@@ -14,18 +14,14 @@ Matrix-style digital rain for Android, drawn live on a `Canvas`. No GIFs, no Lot
   <img src="https://raw.githubusercontent.com/boy-offi9-inc/matrix-rain-demo/main/assets/demo.gif" width="280" alt="MatrixRainView running behind real UI, with live settings">
 </p>
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/boy-offi9-inc/matrix-rain-demo/main/assets/scene_2.jpg" width="30%" alt="Green katakana rain with the settings panel open">
-  <img src="https://raw.githubusercontent.com/boy-offi9-inc/matrix-rain-demo/main/assets/scene_1.jpg" width="30%" alt="Red rain with the settings panel open">
-  <img src="https://raw.githubusercontent.com/boy-offi9-inc/matrix-rain-demo/main/assets/scene_3.jpg" width="30%" alt="Cyan binary rain with the settings panel open">
-</p>
-
-The sample app runs the rain behind real UI and wires every property to a live control, in both XML and Compose: [matrix-rain-demo](https://github.com/boy-offi9-inc/matrix-rain-demo) ([screen recording](https://github.com/boy-offi9-inc/matrix-rain-demo/blob/main/assets/video.mp4)).
+The sample app runs the rain behind real UI and wires every property to a live control, in both XML and Compose: [matrix-rain-demo](https://github.com/boy-offi9-inc/matrix-rain-demo).
 
 ## Features
 
 - Configurable color, speed, density, glyph size, trail fade and head glow
 - Glyph sets: katakana, binary, alphanumeric, or your own characters
+- Touch effects: streams bend around your fingers, glyphs flicker under them, and taps send out a shockwave
+- Glitch bursts, and a transparent mode for running the rain over images or other content
 - Delta-time motion, so speed is the same on 60 Hz and 120 Hz screens
 - Lifecycle-aware: starts on attach, stops on detach, plus `pause()` and `resume()`
 - A standard `View` for XML, and a `MatrixRain` composable for Compose
@@ -66,7 +62,7 @@ Add the dependency:
 
 ```kotlin
 dependencies {
-    implementation("com.github.boy-offi9-inc:matrix-rain-view:1.1.2")
+    implementation("com.github.boy-offi9-inc:matrix-rain-view:1.2.0")
 }
 ```
 
@@ -125,6 +121,41 @@ rain.pause()   // stop animating without detaching the view
 rain.resume()  // resume
 ```
 
+### Touch, glitch and transparent mode
+
+All three are off by default. With `rainTouchEffects` unset the view never
+consumes touch events.
+
+```xml
+<com.boyoffi9.matrixrainview.MatrixRainView
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:rainTouchEffects="avoid|flicker|shockwave"
+    app:rainTouchRadius="96dp"
+    app:rainGlitch="0.3"
+    app:rainTransparent="false" />
+```
+
+| Effect       | What it does                                                                 |
+|--------------|------------------------------------------------------------------------------|
+| `avoid`      | Streams part around each finger and close back up when it moves away         |
+| `flicker`    | Glyphs near a finger mutate rapidly and brighten                             |
+| `shockwave`  | A quick tap sends an expanding ring that scatters and brightens glyphs       |
+| `glitch`     | Holding a finger down boosts the glitch effect                               |
+
+From code, combine the constants with `or`:
+
+```kotlin
+rain.touchEffects = MatrixRainView.TOUCH_AVOID or MatrixRainView.TOUCH_FLICKER
+rain.touchRadiusPx = 120f * resources.displayMetrics.density
+rain.glitchIntensity = 0.3f
+rain.transparentBackground = true
+```
+
+Up to five fingers are tracked at once. Glitch intensity runs from `0` (off) to
+`1`; at `1` bursts are frequent and shift the slices by up to about 15% of the
+view width.
+
 ### Jetpack Compose
 
 ```kotlin
@@ -146,6 +177,15 @@ Parameters are applied to the underlying view in place, and a setter ignores
 a value that hasn't changed. Recomposition doesn't restart the animation, and
 changing one parameter (say, the color) doesn't reshuffle the rain.
 
+Touch effects, glitch and transparent mode are parameters too:
+
+```kotlin
+MatrixRain(
+    touchEffects = MatrixRainView.TOUCH_AVOID or MatrixRainView.TOUCH_FLICKER,
+    glitch = 0.3f,
+)
+```
+
 ## Reference
 
 ### XML attributes
@@ -160,6 +200,11 @@ changing one parameter (say, the color) doesn't reshuffle the rain.
 | `rainFadeStrength` | integer   | `32`       | Trail fade strength, 4 to 255. Lower means longer-lingering trails |
 | `rainCharSet`      | enum      | `katakana` | `katakana`, `binary`, `alnum`, or `custom`                         |
 | `rainCustomChars`  | string    | none       | Glyph pool used when `rainCharSet="custom"`                        |
+| `rainTouchEffects` | flags     | `none`     | Any of `avoid`, `flicker`, `shockwave`, `glitch`, joined with `\|`   |
+| `rainTouchRadius`  | dimension | `96dp`     | Radius of a finger's influence                                     |
+| `rainTouchPush`    | float     | `1.0`      | How far streams part around a finger, 0 to 1 (`avoid` only)       |
+| `rainGlitch`       | float     | `0`        | Glitch intensity, 0 (off) to 1                                     |
+| `rainTransparent`  | boolean   | `false`    | Draw no backdrop; trails fade to transparent                       |
 
 ### Compose parameters
 
@@ -174,6 +219,11 @@ changing one parameter (say, the color) doesn't reshuffle the rain.
 | `textSizePx`   | `Float?`   | `null` (16sp)   | `rainTextSize`     |
 | `charSet`      | `CharSet`  | `KATAKANA`      | `rainCharSet`      |
 | `customChars`  | `String?`  | `null`          | `rainCustomChars`  |
+| `touchEffects` | `Int`      | `0`             | `rainTouchEffects` |
+| `touchRadiusPx`| `Float?`   | `null` (96dp)   | `rainTouchRadius`  |
+| `touchPush`    | `Float`    | `1f`            | `rainTouchPush`    |
+| `glitch`       | `Float`    | `0f`            | `rainGlitch`       |
+| `transparent`  | `Boolean`  | `false`         | `rainTransparent`  |
 
 ## How it works
 
@@ -198,8 +248,11 @@ fragment back stacks.
 
 ## Notes
 
-- The rain paints its own dark backdrop (that's how the trails fade), so it's
-  designed as a full-bleed background rather than a transparent overlay.
+- By default the rain paints its own black backdrop (that's how the trails
+  fade), so it works as a full-bleed background. Set `rainTransparent` to run
+  it over other content instead.
+- Touch effects use the view's own touch events. A rain view sitting behind
+  your UI only receives touches that your foreground views don't consume.
 - The Compose wrapper ships in the same artifact, so Compose libraries come
   along as dependencies even for XML-only apps.
 

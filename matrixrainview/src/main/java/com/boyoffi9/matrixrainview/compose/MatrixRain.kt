@@ -23,6 +23,11 @@ fun MatrixRain(
     textSizePx: Float? = null,
     charSet: MatrixRainView.CharSet = MatrixRainView.CharSet.KATAKANA,
     customChars: String? = null,
+    touchEffects: Int = 0,
+    touchRadiusPx: Float? = null,
+    touchPush: Float = 1f,
+    glitch: Float = 0f,
+    transparent: Boolean = false,
 ) {
     AndroidView(
         modifier = modifier,
@@ -36,6 +41,11 @@ fun MatrixRain(
             textSizePx?.let { view.textSizePx = it }
             view.customChars = customChars
             view.charSet = charSet
+            view.touchEffects = touchEffects
+            touchRadiusPx?.let { view.touchRadiusPx = it }
+            view.touchPush = touchPush
+            view.glitchIntensity = glitch
+            view.transparentBackground = transparent
         }
     )
 }

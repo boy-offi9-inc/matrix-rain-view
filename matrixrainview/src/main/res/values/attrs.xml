@@ -21,5 +21,21 @@
         </attr>
         <!-- Used only when rainCharSet="custom" -->
         <attr name="rainCustomChars" format="string" />
+        <!-- Touch effects, combinable with |. Default none: the view ignores touches. -->
+        <attr name="rainTouchEffects">
+            <flag name="none" value="0" />
+            <flag name="avoid" value="1" />
+            <flag name="flicker" value="2" />
+            <flag name="shockwave" value="4" />
+            <flag name="glitch" value="8" />
+        </attr>
+        <!-- Radius of a finger's influence. Default 96dp. -->
+        <attr name="rainTouchRadius" format="dimension" />
+        <!-- How far streams part around a finger, 0-1. Used with the avoid effect. -->
+        <attr name="rainTouchPush" format="float" />
+        <!-- Glitch intensity, 0 (off) to 1. -->
+        <attr name="rainGlitch" format="float" />
+        <!-- Draw no backdrop and fade trails to transparent. -->
+        <attr name="rainTransparent" format="boolean" />
     </declare-styleable>
 </resources>
