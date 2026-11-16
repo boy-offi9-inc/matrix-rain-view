@@ -228,6 +228,7 @@ MatrixRain(
 | `touchPush`    | `Float`    | `1f`            | `rainTouchPush`    |
 | `glitch`       | `Float`    | `0f`            | `rainGlitch`       |
 | `transparent`  | `Boolean`  | `false`         | `rainTransparent`  |
+| `paused`       | `Boolean`  | `false`         | none               |
 
 ## How it works
 

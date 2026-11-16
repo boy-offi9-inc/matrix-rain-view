@@ -28,6 +28,7 @@ fun MatrixRain(
     touchPush: Float = 1f,
     glitch: Float = 0f,
     transparent: Boolean = false,
+    paused: Boolean = false,
 ) {
     AndroidView(
         modifier = modifier,
@@ -46,6 +47,7 @@ fun MatrixRain(
             view.touchPush = touchPush
             view.glitchIntensity = glitch
             view.transparentBackground = transparent
+            if (paused) view.pause() else view.resume()
         }
     )
 }
