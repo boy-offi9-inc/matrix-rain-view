@@ -1,7 +1,5 @@
 # matrix-rain-view
 
-Matrix-style digital rain for Android, drawn live on a `Canvas`. No GIFs, no Lottie, no video. Works in XML layouts and Jetpack Compose.
-
 [![JitPack](https://jitpack.io/v/boy-offi9-inc/matrix-rain-view.svg?style=flat-square)](https://jitpack.io/#boy-offi9-inc/matrix-rain-view)
 [![Build](https://img.shields.io/github/actions/workflow/status/boy-offi9-inc/matrix-rain-view/build-aar.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=build)](https://github.com/boy-offi9-inc/matrix-rain-view/actions/workflows/build-aar.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)](./LICENSE)
@@ -13,6 +11,10 @@ Matrix-style digital rain for Android, drawn live on a `Canvas`. No GIFs, no Lot
 <p align="center">
   <img src="https://raw.githubusercontent.com/boy-offi9-inc/matrix-rain-demo/main/assets/demo.gif" width="280" alt="MatrixRainView running behind real UI, with live settings">
 </p>
+
+**matrix-rain-view** is a production-ready Android library that renders the Matrix digital-rain effect live on a `Canvas` — no GIFs, no Lottie, no video files. It ships as a standard `View` for XML layouts and a `MatrixRain` composable for Jetpack Compose, with delta-time animation that stays consistent across 60 Hz and 120 Hz screens.
+
+Every visual property (color, speed, density, glyphs, trail, glow) is settable at runtime, touch effects are opt-in, and the view manages its own lifecycle — start on attach, stop on detach.
 
 The sample app runs the rain behind real UI and wires every property to a live control, in both XML and Compose: [matrix-rain-demo](https://github.com/boy-offi9-inc/matrix-rain-demo).
 
@@ -28,6 +30,8 @@ The sample app runs the rain behind real UI and wires every property to a live c
 - No asset files, no reflection, no ProGuard rules needed
 
 ## Why not a GIF or Lottie?
+
+Pre-rendered effects can't adapt to the screen they land on. This library draws every frame from scratch, so the rain fits any size, responds to touch, and costs no asset bytes in your APK:
 
 |                                 | GIF / video | Lottie | matrix-rain-view |
 |---------------------------------|:-----------:|:------:|:----------------:|
