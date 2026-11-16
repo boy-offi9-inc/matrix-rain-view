@@ -16,6 +16,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.animation.LinearInterpolator
+import kotlin.math.exp
+import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -231,6 +233,11 @@ class MatrixRainView @JvmOverloads constructor(
     // bands and the band at sliceTop..sliceBottom is shifted sideways.
     private var glitchBurstLeft = 0f
     private var glitchReshuffleIn = 0f
+
+    // Expected glyph mutations per column per second. Chosen so the old
+    // frame-rate dependent 5% chance per 60fps frame becomes time-based:
+    // 1 - exp(-rate/60) == 0.05 -> rate = -ln(0.95) * 60 ≈ 3.08.
+    private val mutationRatePerSecond = (-ln(0.95) * 60).toFloat()
     private val sliceTop = IntArray(MAX_SLICES)
     private val sliceBottom = IntArray(MAX_SLICES)
     private val sliceShift = IntArray(MAX_SLICES)
@@ -322,16 +329,52 @@ class MatrixRainView @JvmOverloads constructor(
         colWidth = textSizePx * 0.85f
         rowHeight = textSizePx * 1.1f
         val baseColumns = (width / colWidth).toInt().coerceAtLeast(1)
-        columnCount = (baseColumns * density).toInt().coerceIn(1, baseColumns * 3)
+        val newCount = (baseColumns * density).toInt().coerceIn(1, baseColumns * 3)
         // Spread across the full width; a fixed step would leave gaps (density < 1)
         // or push columns off-screen (density > 1).
-        colStep = width.toFloat() / columnCount
-        rows = (height / rowHeight).toInt().coerceAtLeast(1)
+        colStep = width.toFloat() / newCount
+        val newRows = (height / rowHeight).toInt().coerceAtLeast(1)
 
-        columnY = FloatArray(columnCount) { Random.nextInt(-rows, rows).toFloat() }
-        columnSpeed = FloatArray(columnCount) { 0.6f + Random.nextFloat() * 0.8f }
-        columnLength = IntArray(columnCount) { Random.nextInt(8, 24) }
-        columnGlyphs = Array(columnCount) { CharArray(rows) { randomGlyph() } }
+        val oldCount = columnCount
+        val oldGlyphs = columnGlyphs
+        val oldRows = oldGlyphs.firstOrNull()?.size ?: 0
+
+        columnCount = newCount
+        rows = newRows
+
+        if (oldCount == 0 || oldRows == 0) {
+            columnY = FloatArray(newCount) { Random.nextInt(-newRows, newRows).toFloat() }
+            columnSpeed = FloatArray(newCount) { 0.6f + Random.nextFloat() * 0.8f }
+            columnLength = IntArray(newCount) { Random.nextInt(8, 24) }
+            columnGlyphs = Array(newCount) { CharArray(newRows) { randomGlyph() } }
+            return
+        }
+
+        if (oldCount == newCount && oldRows == newRows) return
+
+        // Preserve the rain across density / text-size / size changes: each new
+        // column continues from the old column at the same relative horizontal
+        // position, with head position and trail length scaled to the new row
+        // grid.
+        val rowRatio = newRows.toFloat() / oldRows
+        val newY = FloatArray(newCount)
+        val newSpeed = FloatArray(newCount)
+        val newLength = IntArray(newCount)
+        val newGlyphs = Array(newCount) { CharArray(newRows) { randomGlyph() } }
+
+        for (c in 0 until newCount) {
+            val oc = (c * oldCount / newCount).coerceAtMost(oldCount - 1)
+            newY[c] = columnY[oc] * rowRatio
+            newSpeed[c] = columnSpeed[oc]
+            newLength[c] = (columnLength[oc] * rowRatio).toInt().coerceIn(8, 24)
+            val src = oldGlyphs[oc]
+            val dst = newGlyphs[c]
+            for (r in 0 until minOf(src.size, dst.size)) dst[r] = src[r]
+        }
+        columnY = newY
+        columnSpeed = newSpeed
+        columnLength = newLength
+        columnGlyphs = newGlyphs
     }
 
     // ---------------- Touch ----------------
@@ -723,8 +766,9 @@ class MatrixRainView @JvmOverloads constructor(
                     columnLength[c] = Random.nextInt(8, 24)
                 }
 
-                // Random glyph swaps give the flicker.
-                if (Random.nextFloat() < 0.05f) {
+                // Random glyph swaps give the flicker (time-based, so the
+                // rate doesn't depend on frame rate).
+                if (Random.nextFloat() < 1f - exp(-mutationRatePerSecond * delta)) {
                     val glyphs = columnGlyphs[c]
                     if (glyphs.isNotEmpty()) {
                         glyphs[Random.nextInt(glyphs.size)] = randomGlyph()
