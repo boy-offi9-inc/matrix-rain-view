@@ -66,7 +66,7 @@ Add the dependency:
 
 ```kotlin
 dependencies {
-    implementation("com.github.boy-offi9-inc:matrix-rain-view:1.2.0")
+    implementation("com.github.boy-offi9-inc:matrix-rain-view:1.2.1")
 }
 ```
 
