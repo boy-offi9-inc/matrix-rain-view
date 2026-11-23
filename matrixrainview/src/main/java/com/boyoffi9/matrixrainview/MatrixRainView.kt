@@ -91,7 +91,10 @@ class MatrixRainView @JvmOverloads constructor(
     /** Trail fade strength, clamped to [4, 255]. Lower = longer-lingering trails. */
     var fadeStrength: Int = 32
         set(value) {
-            field = value.coerceIn(4, 255)
+            val clamped = value.coerceIn(4, 255)
+            if (field == clamped) return
+            field = clamped
+            invalidate()
         }
 
     /** Which glyph pool to draw from. */
@@ -350,7 +353,10 @@ class MatrixRainView @JvmOverloads constructor(
             return
         }
 
-        if (oldCount == newCount && oldRows == newRows) return
+        if (oldCount == newCount && oldRows == newRows) {
+            invalidate()
+            return
+        }
 
         // Preserve the rain across density / text-size / size changes: each new
         // column continues from the old column at the same relative horizontal
@@ -375,6 +381,7 @@ class MatrixRainView @JvmOverloads constructor(
         columnSpeed = newSpeed
         columnLength = newLength
         columnGlyphs = newGlyphs
+        invalidate()
     }
 
     // ---------------- Touch ----------------
@@ -402,8 +409,8 @@ class MatrixRainView @JvmOverloads constructor(
             MotionEvent.ACTION_POINTER_UP -> releasePointer(event.getPointerId(event.actionIndex))
             MotionEvent.ACTION_UP -> {
                 releasePointer(event.getPointerId(event.actionIndex))
-                if (has(TOUCH_SHOCKWAVE) && isTap(event)) {
-                    spawnWave(event.x, event.y)
+                if (isTap(event)) {
+                    if (has(TOUCH_SHOCKWAVE)) spawnWave(event.x, event.y)
                     performClick()
                 }
             }
@@ -439,7 +446,7 @@ class MatrixRainView @JvmOverloads constructor(
             }
         }
         if (slot < 0) return
-        if (!touchUsed[slot]) touchAmount[slot] = 0f
+        if (!touchUsed[slot] || !touchHeld[slot]) touchAmount[slot] = 0f
         touchUsed[slot] = true
         touchHeld[slot] = true
         touchId[slot] = id
@@ -751,6 +758,8 @@ class MatrixRainView @JvmOverloads constructor(
         val now = System.nanoTime()
         val delta = if (lastFrameTimeNanos == 0L) 0f else (now - lastFrameTimeNanos) / 1_000_000_000f
         lastFrameTimeNanos = now
+
+        if (rows == 0 || columnCount == 0) return
 
         updateInteraction(delta)
         updateGlitch(delta)
