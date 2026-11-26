@@ -8,6 +8,12 @@ android {
     namespace = "com.boyoffi9.matrixrainview"
     compileSdk = 34
 
+    // Single source of truth for the release version. The CI auto-tag step
+    // reads this and cuts v<version>; the Maven publication below publishes
+    // the same value, and JitPack serves the tag as
+    // com.github.boy-offi9-inc:matrix-rain-view:<version>.
+    version = "1.2.2"
+
     defaultConfig {
         minSdk = 21
         consumerProguardFiles("consumer-rules.pro")

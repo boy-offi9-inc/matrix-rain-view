@@ -1,0 +1,85 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          dependency-graph: disabled
+
+      - name: Assemble library AAR
+        run: gradle :matrixrainview:assembleRelease --stacktrace
+
+      # Interim builds stay in the Actions tab with a short retention so the
+      # artifact storage never grows into a junk drawer.
+      - name: Upload CI artifact
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: matrixrainview-release-aar
+          path: matrixrainview/build/outputs/aar/*.aar
+          if-no-files-found: error
+          retention-days: 7
+
+      # Auto-release: on a green main build whose version has no tag yet,
+      # cut v<version> AND publish the release with the AAR in this same
+      # run — no dependence on the tag push re-firing the workflow (GitHub
+      # dedupes that event when the tag points at the built commit).
+      - name: Auto-tag release
+        id: autotag
+        if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+        run: |
+          VER=$(gradle -q :matrixrainview:properties | grep '^version:' | awk '{print $2}')
+          if [ -z "$VER" ] || [ "$VER" = "unspecified" ]; then
+            echo "::error::could not read project version — set it in matrixrainview/build.gradle.kts"
+            exit 1
+          fi
+          TAG="v${VER}"
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "::notice::tag ${TAG} already exists — skipping auto-tag"
+            echo "tag=" >> "$GITHUB_OUTPUT"
+          else
+            git config user.name "Boy Offi9"
+            git config user.email "boyxoffi9@gmail.com"
+            git tag -a "${TAG}" -m "Release ${TAG} (auto: green build on main)"
+            git push origin "${TAG}"
+            echo "::notice::auto-tagged ${TAG} after a green build"
+            echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Publish the release directly from the main run: step outputs carry the
+      # version from the auto-tag step, so the AAR ships in the SAME run.
+      # (Direct tag pushes to v* also land here via their own run.)
+      - name: Release library
+        if: ${{ steps.autotag.outputs.tag != '' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.autotag.outputs.tag }}
+          files: matrixrainview/build/outputs/aar/*.aar
+          generate_release_notes: true
